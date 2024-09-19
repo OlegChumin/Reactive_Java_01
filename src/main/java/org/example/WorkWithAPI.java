@@ -23,24 +23,22 @@ public class WorkWithAPI {
 
     // ExecutorService
     public static void processWithExecutorService(List<Integer> numbers) throws ExecutionException, InterruptedException {
-        ExecutorService executorService = Executors.newFixedThreadPool(32);
+        try (ExecutorService executorService = Executors.newFixedThreadPool(Schedulers.DEFAULT_BOUNDED_ELASTIC_QUEUESIZE)) {
+            long startTime = System.currentTimeMillis();
 
-        long startTime = System.currentTimeMillis();
+            List<Future<Integer>> futures = numbers.stream()
+                    .map(number -> executorService.submit(() -> simulatedAPICall(number)))
+                    .toList();
 
-        List<Future<Integer>> futures = numbers.stream()
-                .map(number -> executorService.submit(() -> simulatedAPICall(number)))
-                .collect(Collectors.toList());
+            System.out.println("ExecutorService results: ");
+            for (Future<Integer> future : futures) {
+                System.out.println(future.get());
+            }
 
-        System.out.println("ExecutorService results: ");
-        for (Future<Integer> future : futures) {
-            System.out.println(future.get());
+            long endTime = System.currentTimeMillis();
+
+            System.out.println("ExecutorService finished in " + (endTime - startTime) + " ms");
         }
-
-        long endTime = System.currentTimeMillis();
-
-        System.out.println("ExecutorService finished in " + (endTime - startTime) + " ms");
-
-        executorService.shutdown();
     }
 
     // Метод для обработки с использованием Reactor-Core
@@ -79,7 +77,5 @@ public class WorkWithAPI {
 
         // Реактивная обработка
         processWithReactor(numbers);
-
-
     }
 }
